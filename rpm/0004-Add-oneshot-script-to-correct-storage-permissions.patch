@@ -1,0 +1,67 @@
+From 6940ff378dff9188ec753bf4a79f83b26e91f59d Mon Sep 17 00:00:00 2001
+From: Bea Lam <bea.lam@jollamobile.com>
+Date: Tue, 11 Mar 2014 14:04:54 +1000
+Subject: [PATCH] Add oneshot script to correct storage permissions.
+
+---
+ oneshot/libaccounts-storage-perm | 11 +++++++++++
+ rpm/libaccounts-qt.spec          | 11 ++++++++++-
+ 2 files changed, 21 insertions(+), 1 deletion(-)
+ create mode 100644 oneshot/libaccounts-storage-perm
+
+diff --git a/oneshot/libaccounts-storage-perm b/oneshot/libaccounts-storage-perm
+new file mode 100644
+index 0000000..1738c6f
+--- /dev/null
++++ b/oneshot/libaccounts-storage-perm
+@@ -0,0 +1,11 @@
++#!/bin/sh
++
++# only works as root
++[ $UID -eq 0 ] || exit 0
++
++storage_dir=/home/nemo/.config/libaccounts-glib
++mkdir -p $storage_dir
++chown privileged $storage_dir
++chgrp privileged $storage_dir
++chmod 770 $storage_dir
++
+diff --git a/rpm/libaccounts-qt.spec b/rpm/libaccounts-qt.spec
+index c5eaf29..8bf2fd2 100644
+--- a/rpm/libaccounts-qt.spec
++++ b/rpm/libaccounts-qt.spec
+@@ -11,6 +11,9 @@ BuildRequires: qt-devel, doxygen, graphviz
+ BuildRequires: libaccounts-glib-devel >= 0.42
+ BuildRequires: glib2-devel
+ BuildRequires: fdupes
++BuildRequires: oneshot
++Requires: oneshot
++%{_oneshot_requires_post}
+ 
+ %description
+ Framework to provide accounts
+@@ -20,6 +23,7 @@ Framework to provide accounts
+ %doc README COPYING
+ %{_libdir}/lib*.so.*
+ %{_bindir}/account-tool
++%{_oneshotdir}/libaccounts-storage-perm
+ 
+ 
+ %package devel
+@@ -83,7 +87,12 @@ rm %{buildroot}/%{_datadir}/doc/accounts-qt/html/installdox
+ %fdupes %{buildroot}/%{_includedir}
+ %fdupes %{buildroot}/%{_docdir}
+ 
+-%post -p /sbin/ldconfig
++mkdir -p %{buildroot}/%{_oneshotdir}
++install -D -m 755 oneshot/libaccounts-storage-perm %{buildroot}/%{_oneshotdir}
++
++%post
++/sbin/ldconfig
++%{_bindir}/add-oneshot libaccounts-storage-perm
+ 
+ %postun -p /sbin/ldconfig
+ 
+-- 
+1.8.1.2
+
